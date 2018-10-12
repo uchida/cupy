@@ -17,6 +17,18 @@ __device__ double atomicAdd(double *address, double val)
 
 #endif
 
+
+#if __CUDACC_VER_MAJOR >= 10 && __CUDA_ARCH__ >= 700
+
+__device__ float16 atomicAdd(float16* address, float16 val) {
+  half* address_as_half = (half*)address;
+  half* val_as_half = (half)val;
+  half* old = atomicAdd(address_as_half, val_as_half);
+  return float16(old);
+}
+
+#else
+
 __device__ float16 atomicAdd(float16* address, float16 val) {
   unsigned int *aligned = (unsigned int*)((size_t)address - ((size_t)address & 2));
   unsigned int old = *aligned;
@@ -37,4 +49,6 @@ __device__ float16 atomicAdd(float16* address, float16 val) {
   } while(assumed != old);
   __half_raw raw = {old_as_us};
   return float16(half(raw));
-};
+}
+
+#endif
